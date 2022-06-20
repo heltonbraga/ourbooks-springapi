@@ -1,8 +1,10 @@
 package br.com.braga.ourbooks_api.controller;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -21,11 +23,12 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.annotation.JsonView;
 
 import br.com.braga.ourbooks_api.model.Leitor;
-import br.com.braga.ourbooks_api.model.Livro;
+import br.com.braga.ourbooks_api.model.Local;
 import br.com.braga.ourbooks_api.model.Usuario;
 import br.com.braga.ourbooks_api.model.View;
 import br.com.braga.ourbooks_api.repository.LeitorRepository;
-import br.com.braga.ourbooks_api.repository.LivroRepository;
+import br.com.braga.ourbooks_api.repository.LocalRepository;
+import br.com.braga.ourbooks_api.service.LeitorService;
 
 @RestController
 @RequestMapping("/leitor")
@@ -33,9 +36,12 @@ public class LeitorController {
 
 	@Autowired
 	private LeitorRepository leitorRepository;
+	
+	@Autowired
+	private LocalRepository localRepository;
 
 	@Autowired
-	private LivroRepository livroRepository;
+	private LeitorService service;
 
 	@GetMapping
 	@JsonView(View.LeitorLista.class)
@@ -58,8 +64,7 @@ public class LeitorController {
 	@PostMapping
 	@JsonView(View.LeitorDetalhe.class)
 	public ResponseEntity<Leitor> criar() {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		Usuario usuario = (Usuario) auth.getPrincipal();
+		Usuario usuario = getUsuarioLogado();
 		Optional<Leitor> outro = leitorRepository.findByUsuarioId(usuario.getId());
 		if (outro.isPresent()) {
 			return ResponseEntity.badRequest().body(null);
@@ -71,25 +76,48 @@ public class LeitorController {
 		return ResponseEntity.ok(leitor);
 	}
 
-	@PostMapping("/quer")
+	@PostMapping("/quer/{id}")
 	public ResponseEntity<?> incluirLivroDesejado(@PathVariable Long id) {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		Usuario usuario = (Usuario) auth.getPrincipal();
+		Usuario usuario = getUsuarioLogado();
+		try {
+			Leitor leitor = service.incluirLivroDesejado(usuario.getId(), id);
+			return ResponseEntity.ok(leitor.getDesejados());
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
+	}
+
+	@PostMapping("/tem/{id}")
+	public ResponseEntity<?> incluirLivroDisponivel(@PathVariable Long id) {
+		Usuario usuario = getUsuarioLogado();
+		try {
+			Leitor leitor = service.incluirLivroDisponivel(usuario.getId(), id);
+			return ResponseEntity.ok(leitor.getDisponiveis());
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
+	}
+
+	@GetMapping("/tem/{id}")
+	@JsonView(View.LeitorProposta.class)	
+	public ResponseEntity<?> listarPorLivroDisponivel(@PathVariable Long id) {
+		Usuario usuario = getUsuarioLogado();
 		Optional<Leitor> leitor = leitorRepository.findByUsuarioId(usuario.getId());
 		if (leitor.isEmpty()) {
-			return ResponseEntity.notFound().build();
+			return ResponseEntity.badRequest().build();
 		}
-		Optional<Livro> livro = livroRepository.findById(id);
-		if (livro.isEmpty()) {
-			return ResponseEntity.notFound().build();
-		}
-		Leitor oleitor = leitor.get();
-		if(oleitor.getDesejados().contains(livro.get())) {
-			return ResponseEntity.badRequest().body(null);
-		}
-		oleitor.getDesejados().add(livro.get());
-		leitorRepository.save(oleitor);
-		return ResponseEntity.ok(oleitor);
+		List<Local> locais = localRepository.listarParaMovimento(leitor.get().getId(), id);
+		List<Leitor> leitores = locais.stream().map(local -> {
+			Leitor l = local.getLeitor();
+			l.setLocais(Arrays.asList(local));
+			return l;
+		}).collect(Collectors.toList());
+		return ResponseEntity.ok(leitores);
+	}
+
+	private Usuario getUsuarioLogado() {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		return (Usuario) auth.getPrincipal();
 	}
 
 }

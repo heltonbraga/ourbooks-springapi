@@ -13,6 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -50,6 +51,10 @@ public class Leitor {
 	  inverseJoinColumns = @JoinColumn(name = "livro_id"))
 	@JsonView(View.LeitorDetalhe.class)
 	private List<Livro> desejados;
+	
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, mappedBy = "leitor")
+	@JsonView({View.LeitorDetalhe.class, View.LeitorProposta.class})
+	private List<Local> locais; 
 	
 	public Leitor() {
 		//
@@ -93,6 +98,14 @@ public class Leitor {
 
 	public void setUsuario(Usuario usuario) {
 		this.usuario = usuario;
+	}
+
+	public List<Local> getLocais() {
+		return locais;
+	}
+
+	public void setLocais(List<Local> locais) {
+		this.locais = locais;
 	}
 
 }

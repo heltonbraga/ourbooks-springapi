@@ -30,6 +30,11 @@ public class Livro {
 	@NotNull
 	@Size(min = 1, max = 100)
 	private String autor;
+
+	@Column(length = 50, nullable = false)
+	@NotNull
+	@Size(min = 1, max = 50)
+	private String idioma;
 	
 	@Column(length = 1000)
 	@NotNull
@@ -99,6 +104,14 @@ public class Livro {
 			return false;
 		Livro other = (Livro) obj;
 		return Objects.equals(id, other.id);
+	}
+
+	public String getIdioma() {
+		return idioma;
+	}
+
+	public void setIdioma(String idioma) {
+		this.idioma = idioma;
 	}
 
 }

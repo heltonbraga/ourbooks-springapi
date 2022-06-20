@@ -27,6 +27,12 @@ public class Movimento {
 
 	@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
 	private Leitor destino;
+	
+	@ManyToOne(fetch = FetchType.LAZY, optional = true)
+	private Local local;
+	
+	@ManyToOne(fetch = FetchType.LAZY, optional = false)
+	private Livro livro;
 
 	@Enumerated(EnumType.STRING)
 	private Situacao situacao;
@@ -86,6 +92,22 @@ public class Movimento {
 
 	public void setUpdatedAt(LocalDateTime updatedAt) {
 		this.updatedAt = updatedAt;
+	}
+
+	public Local getLocal() {
+		return local;
+	}
+
+	public void setLocal(Local local) {
+		this.local = local;
+	}
+
+	public Livro getLivro() {
+		return livro;
+	}
+
+	public void setLivro(Livro livro) {
+		this.livro = livro;
 	}
 
 }

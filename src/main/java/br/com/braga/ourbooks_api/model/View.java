@@ -7,5 +7,9 @@ public class View {
 	
 	public interface LeitorLista {}
 	public interface LeitorDetalhe extends LeitorLista {}
+	public interface LeitorProposta extends LeitorLista {}
+	
+	public interface LocalLista {}
+	public interface LocalDetalhe extends LocalLista {}
 
 }
